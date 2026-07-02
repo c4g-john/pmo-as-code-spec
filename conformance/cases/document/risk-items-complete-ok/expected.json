@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "risk-items-complete",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

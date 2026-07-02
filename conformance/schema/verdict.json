@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PMO as Code conformance verdict report (SPEC.md §14.9)",
+  "type": "object",
+  "required": ["summary", "documents"],
+  "properties": {
+    "summary": { "type": "object" },
+    "documents": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["check_id", "passed", "blocking"],
+          "properties": {
+            "check_id": { "type": "string" },
+            "passed": { "type": "boolean" },
+            "blocking": { "type": "boolean" },
+            "kind": { "type": "string" },
+            "score": { "type": ["number", "null"] },
+            "detail": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

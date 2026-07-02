@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.2.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.3.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -253,8 +253,10 @@ make common checks configuration-driven so new kinds need no code.
 | `post-implementation-review` | outcomes vs objectives, lessons | — |
 | `benefits-realization` | measurable benefits vs the business case | — |
 
-The reference artifacts (templates, schemas, criteria) for this library ship
-with the reference implementation and are normative for the library's kinds.
+The library's field constraints, sections, item types, and check semantics are
+specified normatively in §13. The machine-readable artifacts (templates,
+schemas, criteria) ship with the reference implementation and are mirrored
+informatively under `artifacts/` in this repository.
 
 ## 8. Checks
 
@@ -346,7 +348,8 @@ Project and portfolio status MUST be **derived** from the documents; a
 processor MUST NOT present a self-reported value as the derived status (a
 status report's own `rag` MAY be used as one input signal).
 
-The RECOMMENDED derivation, per project and for the portfolio rollup:
+A processor MUST report **red** whenever any red condition below holds; the
+amber/green split is RECOMMENDED. Per project and for the portfolio rollup:
 
 - **red** — anything objectively broken: an approved document failing its
   blocking checks, a broken reference, or an enforced profile gap (§9);
@@ -381,14 +384,638 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.2.0 (Draft)** (0.2.0 introduced check severities, §8.2a). Breaking changes to grammars or blocking semantics require
+**v0.3.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
 the check tiers and blocking rules (§8).
 
-Changes to this specification are proposed as pull requests against its
-repository.
+This specification is maintained by John Tanner at C4G Enterprises Inc.
+Changes are proposed as pull requests against this repository. Removals or
+incompatible changes are announced at least one minor version before they
+take effect. A conforming processor SHOULD pass the conformance suite under
+`conformance/` at the spec version it claims; the suite is versioned with the
+specification.
+
+## 13. The Standard Library (normative)
+
+This section specifies the library of §7.2 precisely enough to implement
+without reference to any implementation. For each kind: the frontmatter
+constraints (equivalent to the mirrored JSON Schema), the required sections,
+the item sections with their types, and the checks with their blocking modes
+(§8.2a: `always` blocks at any status, `once-proposed` is advisory for drafts).
+
+### 13.0 Check definitions
+
+Checks marked *(config-driven)* take their section lists from the kind's
+criteria (shown per kind below).
+
+- **`frontmatter-schema`** (always) — the frontmatter is valid against the
+  kind's field constraints, ignoring missing-required-field violations. Type,
+  pattern, enum, format, and length violations fail here.
+- **`frontmatter-complete`** (once-proposed) — no required field is missing.
+- **`required-sections`** (once-proposed, config-driven) — every listed
+  section is present and non-empty per §4.2.
+- **`unique-id`** (always) — the document id is unique across the tree.
+  Occurrences are compared by resolved file path, so the same file reached by
+  two path spellings is not a duplicate.
+- **`project-id-format`** (always; `project` kind) — `id` matches
+  `^PRJ-\d{3,}-[A-Z]{2,6}$` and `code` equals the id's trailing segment.
+- **`items-well-formed`** (always, config-driven) — every top-level bullet in
+  each item section parses under the §6.1 grammar, its TYPE equals the
+  section's declared type, and its CODE equals the owning project's code.
+- **`dates-consistent`** (always) — if both `dates.created` and `dates.target`
+  parse as dates, `target` MUST NOT precede `created`. A present but
+  unparseable value fails. Absent values pass (their presence is
+  `frontmatter-complete`'s concern).
+
+**§13.0.M — the measurability predicate.** Text is *measurable* iff it
+contains at least one digit AND matches at least one of:
+
+```
+comparator   [<>]=?  or a word from:
+             below under above over "at least" "at most" "no more than"
+             "no less than" "fewer than" "more than" "greater than"
+             "less than" within by reach reduce increase decrease drop
+             rise cut from to            (case-insensitive, word-bounded)
+unit/symbol  %  $  €  £  /<digit>  an ISO date \d{4}-\d{2}-\d{2}  or a word from:
+             hour(s) hr(s) day(s) week(s) month(s) minute(s) min(s)
+             second(s) sec(s) USD EUR GBP k m bn pt(s) point(s) x
+                                          (case-insensitive, word-bounded)
+```
+
+- **`measurable-success-criteria`** (once-proposed; `charter`) — every bullet
+  in `Success Criteria` satisfies §13.0.M.
+- **`measurable-items`** / **`measurable-exit-criteria`** (once-proposed,
+  config-driven) — every bullet in each configured measurable section
+  satisfies §13.0.M.
+
+**§13.0.F — the field-extraction rule.** A labelled field inside an item or
+bullet is `Field: value` where the field name is matched case-insensitively
+and the value runs until a semicolon, a period followed by whitespace, a
+period at end of line, or end of line. A value shorter than 2 characters
+counts as absent. (So `Owner: alex.kim. Mitigation: dual-run.` yields
+`alex.kim`.) Items are single source lines (§14.3); fields on later lines are
+not found.
+
+- **`risks-have-owner-and-mitigation`** (once-proposed; `charter`) — every
+  bullet in `Risks` yields values for `Owner` and `Mitigation` per §13.0.F.
+- **`risk-items-complete`** (once-proposed; `risk-register`) — every `RISK`
+  item yields `Probability`, `Impact`, `Owner`, and `Response`.
+- **`adr-items-have-status`** (once-proposed; `adr`) — every `ADR` item
+  yields `Status`, whose value (case-insensitive) is one of
+  `proposed | accepted | superseded | deprecated | rejected`.
+- **`story-format`** (once-proposed; `user-story`) — every `US` item's text,
+  lowercased, contains `"as a "` or `"as an "`, and contains `"i want"`.
+- **`numbered-steps`** (once-proposed, config-driven) — each configured steps
+  section contains at least one line matching `^\s*\d+\.\s`.
+- **`mapping-table`** (once-proposed; `data-migration-plan`) — the
+  `Field Mapping` section contains a Markdown table with at least one data
+  row: lines starting with `|`, minus any line containing `---` (the
+  separator), minus the first remaining line (the header), leaves ≥ 1 row.
+- **`raci-one-accountable`** (once-proposed; `raci-stakeholder`) — in the
+  `RACI Matrix` section, take the lines starting with `|`, drop lines
+  containing `---` and then the header line; every remaining row, split on
+  `|`, has exactly one cell after the first whose trimmed, uppercased value
+  is exactly `A`. (A combined cell such as `A/R` is not counted.)
+- **`references-risk`** (once-proposed; `status-report`) — the
+  `Risks & Issues` section is present and its body matches
+  `\b[A-Z]{2,6}-RISK-\d+\b` at least once.
+- **Semantic checks** (`objective-is-specific`,
+  `success-criteria-verifiable`, and the cross-document alignment checks) are
+  advisory per §8.1. Their scoring is implementation-defined; a processor
+  MUST NOT let them block and MUST skip them gracefully when its judgment
+  backend is unavailable.
+
+### 13.1 `adr`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `adr` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Decisions`.
+**Item sections:** `Decisions` → type `ADR`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `adr-items-have-status` | once-proposed |
+| `unique-id` | always |
+
+### 13.2 `benefits-realization`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `benefits-realization` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Benefits`, `Measurement`, `Realized Value`.
+**Measurable sections** (each bullet must satisfy §13.0.M): `Benefits`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `measurable-items` | once-proposed |
+| `unique-id` | always |
+
+### 13.3 `brd`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `brd` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Purpose`, `Business Requirements`, `Out of Scope`.
+**Item sections:** `Business Requirements` → type `BR`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `unique-id` | always |
+
+### 13.4 `business-case`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `business-case` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `sponsor` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Problem Statement`, `Options Considered`, `Recommendation`, `Costs`, `Benefits`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `unique-id` | always |
+
+### 13.5 `charter`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `charter` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `sponsor` | string | yes | minLength 2 |
+| `budget` | object | yes | — |
+| `budget.amount` | number | yes | > 0 |
+| `budget.currency` | string | yes | pattern `^[A-Z]{3}$` |
+| `dates` | object | yes | — |
+| `dates.created` | string | yes | format `date` |
+| `dates.target` | string | yes | format `date` |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Objective`, `Success Criteria`, `Scope`, `Milestones`, `Risks`, `Approval`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `measurable-success-criteria` | once-proposed |
+| `risks-have-owner-and-mitigation` | once-proposed |
+| `dates-consistent` | always |
+| `unique-id` | always |
+| `objective-is-specific` | advisory (semantic) |
+| `success-criteria-verifiable` | advisory (semantic) |
+
+### 13.6 `data-migration-plan`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `data-migration-plan` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Scope`, `Source Systems`, `Field Mapping`, `Validation`, `Cutover`, `Rollback`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `mapping-table` | once-proposed |
+| `unique-id` | always |
+
+### 13.7 `frnfr`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `frnfr` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Functional Requirements`, `Non-Functional Requirements`.
+**Item sections:** `Functional Requirements` → type `FR`; `Non-Functional Requirements` → type `NFR`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `unique-id` | always |
+
+### 13.8 `hypercare-plan`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `hypercare-plan` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Support Window`, `Severity Levels`, `Escalation`, `Exit Criteria`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `measurable-exit-criteria` | once-proposed |
+| `unique-id` | always |
+
+### 13.9 `post-implementation-review`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `post-implementation-review` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Summary`, `Outcomes vs Objectives`, `What Went Well`, `What Could Improve`, `Lessons Learned`, `Follow-up Actions`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `unique-id` | always |
+
+### 13.10 `prd`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `prd` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Product Requirements`, `Acceptance Criteria`.
+**Item sections:** `Product Requirements` → type `PR`; `Acceptance Criteria` → type `AC`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `unique-id` | always |
+
+### 13.11 `project`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `project` |
+| `id` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+| `code` | string | yes | pattern `^[A-Z]{2,6}$` |
+| `name` | string | yes | minLength 3 |
+| `sponsor` | string | yes | minLength 2 |
+| `status` | any | yes | one of `proposed` / `active` / `on-hold` / `closed` |
+| `profile` | string | no | — |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Scope`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `project-id-format` | always |
+| `required-sections` | once-proposed |
+| `unique-id` | always |
+
+### 13.12 `qa-test-plan`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `qa-test-plan` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Scope`, `Test Approach`, `Environments`, `Entry Criteria`, `Exit Criteria`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `measurable-exit-criteria` | once-proposed |
+| `unique-id` | always |
+
+### 13.13 `raci-stakeholder`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `raci-stakeholder` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Stakeholders`, `RACI Matrix`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `raci-one-accountable` | once-proposed |
+| `unique-id` | always |
+
+### 13.14 `release-cutover-plan`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `release-cutover-plan` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Pre-Cutover Checklist`, `Cutover Steps`, `Verification`, `Rollback Trigger`.
+**Steps sections** (§13.0 `numbered-steps`): `Cutover Steps`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `numbered-steps` | once-proposed |
+| `unique-id` | always |
+
+### 13.15 `risk-register`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `risk-register` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Risks`.
+**Item sections:** `Risks` → type `RISK`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `risk-items-complete` | once-proposed |
+| `unique-id` | always |
+
+### 13.16 `rollback-plan`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `rollback-plan` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Trigger Conditions`, `Rollback Steps`, `Verification`.
+**Steps sections** (§13.0 `numbered-steps`): `Rollback Steps`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `numbered-steps` | once-proposed |
+| `unique-id` | always |
+
+### 13.17 `runbook`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `runbook` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Prerequisites`, `Procedures`, `Monitoring`, `Escalation`.
+**Steps sections** (§13.0 `numbered-steps`): `Procedures`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `numbered-steps` | once-proposed |
+| `unique-id` | always |
+
+### 13.18 `status-report`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `status-report` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `period` | string | yes | format `date` |
+| `rag` | any | yes | one of `green` / `amber` / `red` |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Summary`, `Progress`, `Risks & Issues`, `Next Steps`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `references-risk` | once-proposed |
+| `unique-id` | always |
+
+### 13.19 `test-cases`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `test-cases` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Test Cases`.
+**Item sections:** `Test Cases` → type `TC`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `unique-id` | always |
+
+### 13.20 `user-story`
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `user-story` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `User Stories`.
+**Item sections:** `User Stories` → type `US`.
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `story-format` | once-proposed |
+| `unique-id` | always |
+
+
+## 14. Processing details (normative)
+
+- **14.1 Encoding.** Documents are UTF-8. Processors MUST accept LF line
+  endings and SHOULD accept CRLF. Frontmatter is delimited by `---` lines
+  beginning at the first line of the file.
+- **14.2 Case.** Kind and profile names are lowercase and matched exactly.
+  `status` values and relation names are matched case-insensitively.
+- **14.3 Items are single source lines.** An item is exactly one line matching
+  the §6.1 grammar. Subsequent lines, indented or not, are not part of the
+  item's text; labelled fields (§13.0.F) MUST appear on the item's line.
+- **14.4 Coverage is graph-wide.** A coverage rule is satisfied by any child
+  of the configured type linking via the configured relation, regardless of
+  the child's project. Per-project coverage figures in status output are a
+  reporting scope, not check semantics.
+- **14.5 Canonical registry serialization.** The generated registry is a YAML
+  mapping with a single `projects` key holding a list of mappings, one per
+  anchor, discovered in sorted-path order, each with exactly the keys
+  `id, code, name, sponsor, status` in that order and string values, preceded
+  by the two comment lines:
+
+  ```
+  # Generated by `docassert projects` — do not edit.
+  # The project.md anchors under documents/ are the source of truth.
+  ```
+
+  emitted as YAML without key sorting, UTF-8, LF, trailing newline. Registry
+  freshness (§8.3) is byte-equality against this canonical form.
+- **14.6 Multiple documents per kind.** Permitted. Each document is validated
+  independently; profile completeness (§9) counts a kind complete when at
+  least one qualifying document exists; the *latest* status report is the one
+  with the greatest `period`.
+- **14.7 Failure signalling.** A processor MUST fail its evaluation (non-zero
+  exit or failing status) iff at least one blocking failure exists. Exact
+  exit codes are implementation-defined.
+- **14.8 Robustness.** A document whose frontmatter cannot be parsed produces
+  a blocking `parse` failure for that document; an unknown check id in
+  criteria produces a failure of that check. Neither crashes the evaluation.
+- **14.9 Conformance reports.** For interchange and conformance testing, a
+  processor MUST be able to emit a JSON report of the form
+  `{"summary": {...}, "documents": {"<path>": [{"check_id", "passed",
+  "blocking", "kind", "score", "detail"}, ...]}}`. Only `check_id`, `passed`,
+  and `blocking` are normative; `detail` wording and `score` are not.
+
 
 ---
 

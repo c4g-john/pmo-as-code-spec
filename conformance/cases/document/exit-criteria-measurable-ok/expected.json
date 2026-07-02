@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "measurable-exit-criteria",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

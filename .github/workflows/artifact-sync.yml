@@ -1,0 +1,41 @@
+name: artifact sync
+
+# The artifacts/ mirror must match the docassert release it mirrors.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install "docassert==$(cat .docassert-version)"
+      - name: Mirror matches the pinned release
+        run: |
+          python - <<'PY'
+          import filecmp, sys
+          from importlib.resources import files
+          from pathlib import Path
+          pkg = files("docassert") / "_data"
+          bad = []
+          for sub in ("schema", "criteria", "profiles"):
+              for local in sorted(Path("artifacts", sub).iterdir()):
+                  if local.name == "README.md":
+                      continue
+                  ref = pkg / sub / local.name
+                  if not filecmp.cmp(str(ref), local, shallow=False):
+                      bad.append(str(local))
+          if not filecmp.cmp(str(pkg / "consistency.yaml"), "artifacts/consistency.yaml", shallow=False):
+              bad.append("artifacts/consistency.yaml")
+          if bad:
+              sys.exit("::error::artifacts drifted from docassert: " + ", ".join(bad))
+          print("artifacts match docassert")
+          PY

@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "project-id-format",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

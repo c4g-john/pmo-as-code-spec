@@ -1,0 +1,30 @@
+# Audit criteria for the Status Report kind.
+kind: status-report
+
+required_sections:
+  - Summary
+  - Progress
+  - Risks & Issues
+  - Next Steps
+
+checks:
+  - id: frontmatter-schema
+    type: structural
+    blocking: true
+    description: Frontmatter is valid (includes a period date and a green/amber/red rag).
+  - id: frontmatter-complete
+    type: structural
+    blocking: once-proposed
+    description: Every schema-required frontmatter field is present (advisory while draft).
+  - id: required-sections
+    type: structural
+    blocking: once-proposed
+    description: Every required section is present and non-empty.
+  - id: references-risk
+    type: structural
+    blocking: once-proposed
+    description: The Risks & Issues section cites at least one RISK-### from the register.
+  - id: unique-id
+    type: structural
+    blocking: true
+    description: The document id is unique across documents/.

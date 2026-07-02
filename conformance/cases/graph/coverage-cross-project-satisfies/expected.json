@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "coverage",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

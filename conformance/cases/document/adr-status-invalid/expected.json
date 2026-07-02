@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "adr-items-have-status",
+   "passed": false,
+   "blocking": true
+  }
+ ]
+}

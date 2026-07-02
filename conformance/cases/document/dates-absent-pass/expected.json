@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "dates-consistent",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}
