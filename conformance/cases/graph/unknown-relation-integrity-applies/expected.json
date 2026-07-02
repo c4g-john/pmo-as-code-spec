@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "referential-integrity",
+   "passed": false,
+   "blocking": true
+  }
+ ]
+}

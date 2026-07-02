@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "mapping-table",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

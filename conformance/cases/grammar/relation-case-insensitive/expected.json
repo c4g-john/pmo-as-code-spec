@@ -1,0 +1,16 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "referential-integrity",
+   "passed": true,
+   "blocking": true
+  },
+  {
+   "path": "*",
+   "check_id": "required-links",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

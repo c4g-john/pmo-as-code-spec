@@ -1,0 +1,11 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "required-sections",
+   "passed": false,
+   "blocking": true
+  }
+ ],
+ "exit_nonzero": true
+}

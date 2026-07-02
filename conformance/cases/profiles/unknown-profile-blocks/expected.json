@@ -1,0 +1,11 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "profile-completeness",
+   "passed": false,
+   "blocking": true
+  }
+ ],
+ "exit_nonzero": true
+}

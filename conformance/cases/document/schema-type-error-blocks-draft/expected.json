@@ -1,0 +1,11 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "frontmatter-schema",
+   "passed": false,
+   "blocking": true
+  }
+ ],
+ "exit_nonzero": true
+}

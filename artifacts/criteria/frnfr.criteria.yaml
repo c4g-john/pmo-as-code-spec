@@ -1,0 +1,35 @@
+# Audit criteria for the Functional / Non-Functional Requirements kind.
+kind: frnfr
+
+required_sections:
+  - Overview
+  - Functional Requirements
+  - Non-Functional Requirements
+
+item_sections:
+  - section: Functional Requirements
+    prefix: FR
+  - section: Non-Functional Requirements
+    prefix: NFR
+
+checks:
+  - id: frontmatter-schema
+    type: structural
+    blocking: true
+    description: Frontmatter is valid against schema/frnfr.schema.json.
+  - id: frontmatter-complete
+    type: structural
+    blocking: once-proposed
+    description: Every schema-required frontmatter field is present (advisory while draft).
+  - id: required-sections
+    type: structural
+    blocking: once-proposed
+    description: Every required section is present and non-empty.
+  - id: items-well-formed
+    type: structural
+    blocking: true
+    description: Functional requirements are **FR-###**, non-functional are **NFR-###**.
+  - id: unique-id
+    type: structural
+    blocking: true
+    description: The document id is unique across documents/.

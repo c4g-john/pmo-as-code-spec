@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "references-risk",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

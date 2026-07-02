@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "story-format",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "risks-have-owner-and-mitigation",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}

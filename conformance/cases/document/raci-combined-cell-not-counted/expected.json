@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "raci-one-accountable",
+   "passed": false,
+   "blocking": true
+  }
+ ]
+}

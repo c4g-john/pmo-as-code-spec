@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "numbered-steps",
+   "passed": false,
+   "blocking": true
+  }
+ ]
+}
