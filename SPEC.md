@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.1.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.2.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -106,8 +106,14 @@ no content other than whitespace and HTML comments.
 
 `status` MUST be one of `draft`, `proposed`, `approved`, `baselined` (a kind
 MAY restrict this set; `charter` in the standard library omits `baselined`).
-The **approved** predicate (§2) gates the stricter cross-document checks
-(§8.3): work-in-progress MUST NOT be blocked for incompleteness.
+The lifecycle carries the check gradient — work-in-progress MUST NOT be
+blocked for incompleteness:
+
+- **draft** — work in progress: completeness checks (§8.2) are advisory;
+- **proposed** — the document claims completeness: per-document completeness
+  checks block;
+- **approved / baselined** — the **approved** predicate (§2): the stricter
+  cross-document checks (§8.3) also block.
 
 A project anchor uses a different lifecycle: `proposed`, `active`, `on-hold`,
 `closed` (§5.1).
@@ -256,7 +262,9 @@ with the reference implementation and are normative for the library's kinds.
 
 - **Structural checks** MUST be deterministic. A failing structural check
   marked blocking MUST be able to fail the evaluation (non-zero exit /
-  failing CI status), which is what makes the gate real.
+  failing CI status), which is what makes the gate real. Structural checks
+  carry a **severity** (§8.2a): integrity checks block at any status;
+  completeness checks are advisory for drafts.
 - **Semantic checks** (AI- or human-judgment-based) MUST NOT block. They are
   advisory: a processor MUST NOT let a semantic failure affect its blocking
   outcome, and MUST degrade gracefully (skip, not fail) when the judgment
@@ -270,6 +278,26 @@ schema; presence and non-emptiness of the kind's required sections; the item
 grammar of §6.1 in every declared item section (including that each item's
 TYPE matches the section and its CODE matches the owning project); and
 document-id uniqueness.
+
+### 8.2a Check severities
+
+Every per-document structural check MUST be classified as one of:
+
+- **integrity** (criteria `blocking: always`, the default) — violations mean
+  the document is *malformed*: unparseable frontmatter, type/format/pattern/
+  enum violations, a malformed or mistyped item bullet, a duplicate id, an
+  invalid or inverted date. Integrity failures MUST block at any status,
+  including drafts, because malformed data corrupts the graph.
+- **completeness** (criteria `blocking: once-proposed`) — violations mean the
+  document is *unfinished*: a schema-required field not yet present, an empty
+  required section, an unmeasurable criterion, a risk without an owner.
+  Completeness failures MUST be advisory while the document's status is
+  `draft`, and MUST block once it is `proposed` or beyond. Processors MUST
+  still report advisory completeness failures.
+
+The standard library classifies missing required frontmatter as completeness
+via a dedicated check (`frontmatter-complete`), keeping `frontmatter-schema`
+as pure wellformedness.
 
 ### 8.3 Cross-document evaluation
 
@@ -353,7 +381,7 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.1.0 (Draft)**. Breaking changes to grammars or blocking semantics require
+**v0.2.0 (Draft)** (0.2.0 introduced check severities, §8.2a). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -376,6 +404,8 @@ links clause   <relation>: <id>[, <id>]* [; <relation>: <id>[, <id>]*]*
 doc lifecycle  draft | proposed | approved | baselined
 project state  proposed | active | on-hold | closed
 approved       status ∈ {approved, baselined}
+severity       blocking: always | once-proposed | never
+               (once-proposed = advisory while status is draft)
 ```
 
 ## Appendix B — Reference implementation (non-normative)
