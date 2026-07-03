@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.3.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.3.1 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -384,7 +384,8 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.3.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`). Breaking changes to grammars or blocking semantics require
+**v0.3.1 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+informative execution-mapping appendix). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -1043,3 +1044,51 @@ specification (`pip install docassert`), ships the standard kind library of
 the derived-status renderers of §10. A living conforming repository is
 [pmo-as-code-pipeline](https://github.com/c4g-john/pmo-as-code-pipeline); a
 starter is [pmo-as-code-template](https://github.com/c4g-john/pmo-as-code-template).
+
+## Appendix C — Execution mapping (informative)
+
+This appendix documents how a repository's approved scope can drive an
+execution tracker, as proven by the reference deployment. It is informative:
+processors are not required to implement it, and none of it affects
+conformance. It may be promoted to a normative profile in a future version
+once a second consumer exists.
+
+**The one-directional authority rule.** Scope flows documents → tracker;
+execution state flows tracker → rendered status; nothing flows tracker →
+documents. An item created directly in the tracker is not scope, and a closed
+tracker item never modifies a document. Scope changes travel the same path as
+any change: a reviewed pull request against the documents.
+
+**The mapping** (GitHub terms; other trackers can mirror the shape):
+
+| Standard concept | Tracker concept |
+|---|---|
+| Project (`PRJ-NNN-CODE`) | one project board, plus a `PMO Project` field on every item |
+| Product requirement (`PR` item) with ≥ 1 linked story | a parent issue ("Feature") |
+| User story (`US` item, `traces:` its PR item) | a sub-issue of its Feature |
+| Acceptance criteria (`AC` items verifying the PR item) | a checklist in the Feature body |
+| Code | pull requests closing Story issues |
+
+**The gate.** A project enters the tracker only when its `user-story` document
+is approved (§4.3) and every approved story traces to a resolvable product
+requirement. Draft and proposed stories never reach the tracker; the board is
+a commitment surface, not a backlog of ideas.
+
+**Idempotency.** Every managed tracker item embeds its document item id as a
+machine-readable marker (the reference implementation uses an HTML comment,
+`<!-- docassert-bridge: RFH-US-001 -->`). The marker, not the title, is the
+join key. Synchronization creates missing items, converges drifted titles and
+bodies, and never deletes or reopens.
+
+**Scope policing.** A reconciliation pass classifies every open tracker item:
+*matched* (marker resolves to a current approved item), *unverified* (no
+marker), or *orphaned* (marker resolves to an item that was removed or
+demoted). Unverified and orphaned items are labelled and alerted, never
+auto-closed; a human decides, and the honest fix for new scope is a documents
+pull request. A non-zero exit from reconciliation makes CI itself the alarm.
+
+**Delivery read-back.** Execution progress (closed stories per feature) and
+the scope classification may be rendered beside the document-derived status.
+Delivery figures MUST NOT alter the derived status of §10 in this mapping;
+scope health and schedule health remain separate signals.
+
