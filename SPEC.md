@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.3.1 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.3.2 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -136,6 +136,7 @@ kind `project` with frontmatter:
 | `sponsor` | the accountable individual |
 | `status` | one of `proposed`, `active`, `on-hold`, `closed` |
 | `profile` | OPTIONAL; names a profile (§9) |
+| `repo` | OPTIONAL; `OWNER/NAME` of the code repository the project's execution bridge targets (Appendix C) |
 
 Across a repository, project `id`s MUST be unique and project `code`s MUST be
 unique. The numeric segment SHOULD be assigned sequentially; the id, once
@@ -384,8 +385,9 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.3.1 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
-informative execution-mapping appendix). Breaking changes to grammars or blocking semantics require
+**v0.3.2 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+informative execution-mapping appendix; 0.3.2 added the optional `repo`
+field on project anchors for bridge repository routing). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -1046,6 +1048,12 @@ the derived-status renderers of §10. A living conforming repository is
 starter is [pmo-as-code-template](https://github.com/c4g-john/pmo-as-code-template).
 
 ## Appendix C — Execution mapping (informative)
+
+*Repository routing:* when project anchors carry the OPTIONAL `repo` field
+(§5.1), a processor SHOULD route each project's Features and Stories to that
+repository, and reconciliation within a repository SHOULD treat the union of
+all projects mapped to it as in scope. An explicit target repository supplied
+at invocation applies the whole plan to that repository unchanged.
 
 This appendix documents how a repository's approved scope can drive an
 execution tracker, as proven by the reference deployment. It is informative:
