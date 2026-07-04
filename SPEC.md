@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.3.2 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.4.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -354,9 +354,9 @@ amber/green split is RECOMMENDED. Per project and for the portfolio rollup:
 
 - **red** — anything objectively broken: an approved document failing its
   blocking checks, a broken reference, or an enforced profile gap (§9);
-- **amber** — carrying risk or incompleteness: coverage gaps, open risks in
-  the register, profile gaps not yet enforced, or a latest status report
-  self-reporting amber/red;
+- **amber** — carrying risk or incompleteness: coverage gaps, risks whose
+  disposition is `open` (§13.15), profile gaps not yet enforced, or a latest
+  status report self-reporting amber/red;
 - **green** — none of the above.
 
 Processors SHOULD provide per-project status (documents, coverage, risks,
@@ -385,9 +385,12 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.3.2 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+**v0.4.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
 informative execution-mapping appendix; 0.3.2 added the optional `repo`
-field on project anchors for bridge repository routing). Breaking changes to grammars or blocking semantics require
+field on project anchors for bridge repository routing; 0.4.0 made the risk
+lifecycle normative: the `Status` disposition field on `RISK` items, the
+`risk-disposition-valid` check, and the derived-status rule that only
+`open` risks signal amber). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -465,6 +468,10 @@ not found.
   bullet in `Risks` yields values for `Owner` and `Mitigation` per §13.0.F.
 - **`risk-items-complete`** (once-proposed; `risk-register`) — every `RISK`
   item yields `Probability`, `Impact`, `Owner`, and `Response`.
+- **`risk-disposition-valid`** (always; `risk-register`) — where a `RISK`
+  item yields a `Status` field, its value (case-insensitive) is one of
+  `open | mitigated | accepted | closed`. A `RISK` item without a `Status`
+  field has the disposition `open`.
 - **`adr-items-have-status`** (once-proposed; `adr`) — every `ADR` item
   yields `Status`, whose value (case-insensitive) is one of
   `proposed | accepted | superseded | deprecated | rejected`.
@@ -844,6 +851,13 @@ Additional frontmatter fields are permitted.
 **Required sections:** `Overview`, `Risks`.
 **Item sections:** `Risks` → type `RISK`.
 
+`RISK` item text yields fields per §14's field grammar: `Probability`,
+`Impact`, `Owner`, `Response` (see `risk-items-complete`), and OPTIONALLY
+`Status` — the risk's disposition, one of `open`, `mitigated`, `accepted`,
+or `closed` (case-insensitive). Absent `Status` means `open`. Only risks
+whose disposition is `open` carry into the derived-status risk signal (§10);
+dispositioned risks remain in the register as record.
+
 | Check | Blocking |
 |---|---|
 | `frontmatter-schema` | always |
@@ -851,6 +865,7 @@ Additional frontmatter fields are permitted.
 | `required-sections` | once-proposed |
 | `items-well-formed` | always |
 | `risk-items-complete` | once-proposed |
+| `risk-disposition-valid` | always |
 | `unique-id` | always |
 
 ### 13.16 `rollback-plan`
