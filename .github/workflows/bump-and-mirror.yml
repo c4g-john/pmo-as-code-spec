@@ -38,8 +38,9 @@ jobs:
             sleep 75
           done
           pkgdata=$(python3 -c "from importlib.resources import files; print(files('docassert') / '_data')")
-          for sub in criteria schema profiles; do
-            cp "$pkgdata/$sub/"* "artifacts/$sub/" 2>/dev/null || true
+          for sub in criteria schema profiles templates; do
+            mkdir -p "artifacts/$sub"
+            cp "$pkgdata/$sub/"* "artifacts/$sub/"
           done
           cp "$pkgdata/consistency.yaml" artifacts/consistency.yaml
           echo "$latest" > .docassert-version
