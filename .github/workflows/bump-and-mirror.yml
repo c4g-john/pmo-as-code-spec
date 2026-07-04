@@ -30,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
         run: |
           latest=$(curl -s https://pypi.org/pypi/docassert/json | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["version"])')
-          pin=$(cat .docassert-version | tr -d '[:space:]')
+          pin=$(tr -d '[:space:]' < .docassert-version)
           if [ "$latest" = "$pin" ]; then echo "coherent at $pin"; exit 0; fi
           for attempt in 1 2 3 4; do
             pip install --quiet "docassert==$latest" && break
