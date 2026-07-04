@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.12"
-      - run: pip install "docassert==$(cat .docassert-version)"
+      - uses: c4g-john/docassert-action/install@v1
       - name: Mirror matches the pinned release
         run: |
           python - <<'PY'
