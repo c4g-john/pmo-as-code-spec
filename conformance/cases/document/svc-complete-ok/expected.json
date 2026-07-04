@@ -1,0 +1,16 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "svc-items-complete",
+   "passed": true,
+   "blocking": true
+  },
+  {
+   "path": "*",
+   "check_id": "ops-review-fresh",
+   "passed": true,
+   "blocking": false
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.4.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.5.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -251,6 +251,7 @@ make common checks configuration-driven so new kinds need no code.
 | `hypercare-plan` | support window, severities, measurable exit | — |
 | `runbook` | operational procedures, monitoring, escalation | — |
 | `status-report` | period, RAG, cites risks from the register | — |
+| `operations` | service catalog with levels/measures, `review_by` freshness | `SVC` |
 | `post-implementation-review` | outcomes vs objectives, lessons | — |
 | `benefits-realization` | measurable benefits vs the business case | — |
 
@@ -355,8 +356,9 @@ amber/green split is RECOMMENDED. Per project and for the portfolio rollup:
 - **red** — anything objectively broken: an approved document failing its
   blocking checks, a broken reference, or an enforced profile gap (§9);
 - **amber** — carrying risk or incompleteness: coverage gaps, risks whose
-  disposition is `open` (§13.15), profile gaps not yet enforced, or a latest
-  status report self-reporting amber/red;
+  disposition is `open` (§13.15), an operations document whose `review_by`
+  has passed (§13.21), profile gaps not yet enforced, or a latest status
+  report self-reporting amber/red;
 - **green** — none of the above.
 
 Processors SHOULD provide per-project status (documents, coverage, risks,
@@ -385,12 +387,14 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.4.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+**v0.5.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
 informative execution-mapping appendix; 0.3.2 added the optional `repo`
 field on project anchors for bridge repository routing; 0.4.0 made the risk
 lifecycle normative: the `Status` disposition field on `RISK` items, the
 `risk-disposition-valid` check, and the derived-status rule that only
-`open` risks signal amber). Breaking changes to grammars or blocking semantics require
+`open` risks signal amber; 0.5.0 added the `operations` kind (§13.21):
+service catalogs with `Level`/`Measure` fields, the required `review_by`
+date, and review staleness as an amber input to derived status). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -472,6 +476,11 @@ not found.
   item yields a `Status` field, its value (case-insensitive) is one of
   `open | mitigated | accepted | closed`. A `RISK` item without a `Status`
   field has the disposition `open`.
+- **`svc-items-complete`** (once-proposed; `operations`) — every `SVC` item
+  yields `Level` and `Measure`.
+- **`ops-review-fresh`** (never blocking; `operations`) — `review_by` is
+  today or later; a past date reports as a failed advisory and feeds the
+  derived-status amber rule (§10).
 - **`adr-items-have-status`** (once-proposed; `adr`) — every `ADR` item
   yields `Status`, whose value (case-insensitive) is one of
   `proposed | accepted | superseded | deprecated | rejected`.
@@ -990,6 +999,45 @@ Additional frontmatter fields are permitted.
 | `story-format` | once-proposed |
 | `unique-id` | always |
 
+
+### 13.21 `operations`
+
+The governance home for ongoing work: a service catalog with commitments,
+chartered per operating period, whose freshness is part of derived status.
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `kind` | any | yes | const `operations` |
+| `id` | string | yes | pattern `^[A-Z]{2,6}-[a-z0-9][a-z0-9-]*$` |
+| `title` | string | yes | minLength 3 |
+| `owner` | string | yes | minLength 2 |
+| `status` | any | yes | one of `draft` / `proposed` / `approved` / `baselined` |
+| `project` | string | yes | pattern `^PRJ-\d{3,}-[A-Z]{2,6}$` |
+| `review_by` | string | yes | format `date` — the next operations review |
+
+Additional frontmatter fields are permitted.
+
+**Required sections:** `Overview`, `Services`.
+**Item sections:** `Services` → type `SVC`.
+
+`SVC` item text yields fields per §14's field grammar: `Level` (the service
+commitment, which SHOULD be measurable per §14's measurability rule) and
+`Measure` (how attainment is read).
+
+| Check | Blocking |
+|---|---|
+| `frontmatter-schema` | always |
+| `frontmatter-complete` | once-proposed |
+| `required-sections` | once-proposed |
+| `items-well-formed` | always |
+| `svc-items-complete` | once-proposed |
+| `ops-review-fresh` | never (advisory) |
+| `unique-id` | always |
+
+`ops-review-fresh` reports whether `review_by` is today or later. A past
+`review_by` never blocks a merge; it is an **amber input to derived status**
+(§10): a project whose operations document has a stale review is carrying
+unreviewed operational commitments.
 
 ## 14. Processing details (normative)
 
