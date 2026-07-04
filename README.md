@@ -1,6 +1,6 @@
 # PMO as Code — the specification
 
-**[Read the spec → SPEC.md](SPEC.md)** · current version **v0.1.0 (Draft)**
+**[Read the spec → SPEC.md](SPEC.md)** · current version **v0.8.0 (Draft)**
 
 PMO as Code is a vendor-neutral standard for running a PMO from
 version-controlled, declarative files. This repository holds the normative
