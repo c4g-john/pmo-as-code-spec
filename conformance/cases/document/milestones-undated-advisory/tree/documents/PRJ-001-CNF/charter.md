@@ -10,7 +10,7 @@ budget:
   currency: USD
 dates:
   created: 2026-01-01
-  target completion, date to be set
+  target: 2026-12-31
 status: proposed
 ---
 
