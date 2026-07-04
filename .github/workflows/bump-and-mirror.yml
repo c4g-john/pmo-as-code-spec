@@ -1,0 +1,56 @@
+name: bump docassert + refresh mirror
+
+# The anti-0.7.1 controller: daily, compares the sync pin to the latest
+# release; when it trails, bumps the pin AND refreshes the artifacts/ mirror
+# from the released package in one PR, auto-merged when checks pass (needs
+# BUMP_TOKEN so required checks run on the PR).
+on:
+  schedule:
+    - cron: "37 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bump-and-mirror
+  cancel-in-progress: false
+
+jobs:
+  converge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Converge pin and mirror to the latest release
+        env:
+          GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
+        run: |
+          latest=$(curl -s https://pypi.org/pypi/docassert/json | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["version"])')
+          pin=$(tr -d '[:space:]' < .docassert-version)
+          if [ "$latest" = "$pin" ]; then echo "coherent at $pin"; exit 0; fi
+          for attempt in 1 2 3 4; do
+            pip install --quiet "docassert==$latest" && break
+            [ "$attempt" = "4" ] && { echo "::error::install failed"; exit 1; }
+            sleep 75
+          done
+          pkgdata=$(python3 -c "from importlib.resources import files; print(files('docassert') / '_data')")
+          for sub in criteria schema profiles; do
+            cp "$pkgdata/$sub/"* "artifacts/$sub/" 2>/dev/null || true
+          done
+          cp "$pkgdata/consistency.yaml" artifacts/consistency.yaml
+          echo "$latest" > .docassert-version
+          BRANCH="bump-mirror-$latest"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A
+          git diff --cached --quiet && { echo "mirror already coherent"; exit 0; }
+          git commit -m "Converge sync pin and artifacts mirror to docassert $latest"
+          git push -u origin "$BRANCH"
+          gh pr create --title "Converge pin + mirror to docassert $latest" \
+            --body "Automated: the drift guard's comparison target and the mirrored artifacts advance together, so the guard can never go vacuous again."
+          gh pr merge --auto --squash "$BRANCH" || true
