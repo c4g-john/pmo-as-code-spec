@@ -1,0 +1,10 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "risk-disposition-valid",
+   "passed": true,
+   "blocking": true
+  }
+ ]
+}
