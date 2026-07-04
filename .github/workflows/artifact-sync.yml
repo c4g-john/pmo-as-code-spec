@@ -26,13 +26,22 @@ jobs:
           from pathlib import Path
           pkg = files("docassert") / "_data"
           bad = []
-          for sub in ("schema", "criteria", "profiles"):
+          for sub in ("schema", "criteria", "profiles", "templates"):
+              local_names = set()
               for local in sorted(Path("artifacts", sub).iterdir()):
                   if local.name == "README.md":
                       continue
+                  local_names.add(local.name)
                   ref = pkg / sub / local.name
-                  if not filecmp.cmp(str(ref), local, shallow=False):
+                  if not ref.is_file():
+                      bad.append(f"{local} (no longer shipped by docassert)")
+                  elif not filecmp.cmp(str(ref), local, shallow=False):
                       bad.append(str(local))
+              # Additions ship in releases; a pkg file absent locally means the
+              # mirror is incomplete, not merely stale.
+              for ref in sorted((pkg / sub).iterdir()):
+                  if ref.name not in local_names:
+                      bad.append(f"artifacts/{sub}/{ref.name} (missing from mirror)")
           if not filecmp.cmp(str(pkg / "consistency.yaml"), "artifacts/consistency.yaml", shallow=False):
               bad.append("artifacts/consistency.yaml")
           if bad:
