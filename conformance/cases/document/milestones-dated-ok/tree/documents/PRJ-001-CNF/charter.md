@@ -25,7 +25,7 @@ Fixture.
 
 ## Milestones
 - Fixture midpoint review: 2026-06-30
-- Fixture completion: 2026-12-31
+- Fixture completion — 2026-12-31
 
 ## Risks
 - A fixture risk. Owner: jane.doe. Mitigation: fixture.

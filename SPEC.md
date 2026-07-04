@@ -627,7 +627,8 @@ Additional frontmatter fields are permitted.
 
 **Required sections:** `Objective`, `Success Criteria`, `Scope`, `Milestones`, `Risks`, `Approval`.
 
-Bullets in `Milestones` SHOULD end with an ISO date: `- <label>: YYYY-MM-DD`.
+Bullets in `Milestones` SHOULD end with an ISO date, separated from the
+label by a colon or a dash: `- <label>: YYYY-MM-DD` or `- <label> — YYYY-MM-DD`.
 Dated milestones are machine-readable — processors use them for timeline
 views and next-milestone signals, always as **temporal facts** (elapsed,
 today, upcoming): a milestone's date passing MUST NOT be presented as its
