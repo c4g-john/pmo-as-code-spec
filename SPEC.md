@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.5.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.6.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -387,14 +387,16 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.5.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+**v0.6.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
 informative execution-mapping appendix; 0.3.2 added the optional `repo`
 field on project anchors for bridge repository routing; 0.4.0 made the risk
 lifecycle normative: the `Status` disposition field on `RISK` items, the
 `risk-disposition-valid` check, and the derived-status rule that only
 `open` risks signal amber; 0.5.0 added the `operations` kind (§13.21):
 service catalogs with `Level`/`Measure` fields, the required `review_by`
-date, and review staleness as an amber input to derived status). Breaking changes to grammars or blocking semantics require
+date, and review staleness as an amber input to derived status; 0.6.0 made
+dated charter milestones machine-readable (`- <label>: YYYY-MM-DD`, the
+advisory `milestones-dated` check, temporal-fact presentation rule)). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -476,6 +478,9 @@ not found.
   item yields a `Status` field, its value (case-insensitive) is one of
   `open | mitigated | accepted | closed`. A `RISK` item without a `Status`
   field has the disposition `open`.
+- **`milestones-dated`** (never blocking; `charter`) — at least one
+  `Milestones` bullet ends with an ISO date, so timelines have something to
+  draw. Advisory only: undated milestone prose is legal.
 - **`svc-items-complete`** (once-proposed; `operations`) — every `SVC` item
   yields `Level` and `Measure`.
 - **`ops-review-fresh`** (never blocking; `operations`) — `review_by` is
@@ -621,6 +626,12 @@ Additional frontmatter fields are permitted.
 Additional frontmatter fields are permitted.
 
 **Required sections:** `Objective`, `Success Criteria`, `Scope`, `Milestones`, `Risks`, `Approval`.
+
+Bullets in `Milestones` SHOULD end with an ISO date: `- <label>: YYYY-MM-DD`.
+Dated milestones are machine-readable — processors use them for timeline
+views and next-milestone signals, always as **temporal facts** (elapsed,
+today, upcoming): a milestone's date passing MUST NOT be presented as its
+completion. Undated bullets are permitted and simply invisible to timelines.
 
 | Check | Blocking |
 |---|---|
