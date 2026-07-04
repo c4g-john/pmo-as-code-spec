@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.6.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.7.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -355,11 +355,25 @@ amber/green split is RECOMMENDED. Per project and for the portfolio rollup:
 
 - **red** — anything objectively broken: an approved document failing its
   blocking checks, a broken reference, or an enforced profile gap (§9);
-- **amber** — carrying risk or incompleteness: coverage gaps, risks whose
-  disposition is `open` (§13.15), an operations document whose `review_by`
-  has passed (§13.21), profile gaps not yet enforced, or a latest status
-  report self-reporting amber/red;
+- **amber** — carrying risk or incompleteness: coverage gaps, open risks at
+  or above the repository's **risk appetite** (below), an operations document
+  whose `review_by` has passed (§13.21), profile gaps not yet enforced, or a
+  latest status report self-reporting amber/red;
 - **green** — none of the above.
+
+*Risk appetite:* scoring probability and impact as low=1, medium=2, high=3,
+critical=3, an open risk moves status to amber only when probability ×
+impact meets the repository's threshold — default **6**, configurable as
+`risk_amber_score` in `consistency.yaml` (`0` means any open risk ambers).
+Open risks below the threshold remain fully reported as exposure; they are
+recorded facts, not status defects. Rationale: a derivation in which any
+open risk ambers forever punishes risk documentation and rewards empty
+registers — the opposite of this standard's purpose.
+
+*Charter target milestone:* processors SHOULD treat an approved charter's
+`dates.target` as an implicit dated milestone ("Charter target") wherever
+dated milestones are presented (§13.2), so every chartered project has a
+timeline anchor.
 
 Processors SHOULD provide per-project status (documents, coverage, risks,
 completeness) and a portfolio index, and SHOULD be able to render them for
@@ -387,7 +401,7 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.6.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+**v0.7.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
 informative execution-mapping appendix; 0.3.2 added the optional `repo`
 field on project anchors for bridge repository routing; 0.4.0 made the risk
 lifecycle normative: the `Status` disposition field on `RISK` items, the
@@ -396,7 +410,10 @@ lifecycle normative: the `Status` disposition field on `RISK` items, the
 service catalogs with `Level`/`Measure` fields, the required `review_by`
 date, and review staleness as an amber input to derived status; 0.6.0 made
 dated charter milestones machine-readable (`- <label>: YYYY-MM-DD`, the
-advisory `milestones-dated` check, temporal-fact presentation rule)). Breaking changes to grammars or blocking semantics require
+advisory `milestones-dated` check, temporal-fact presentation rule); 0.7.0
+introduced the risk appetite: open risks amber derived status only at or
+above `risk_amber_score` (default 6), and charters' `dates.target` became
+an implicit milestone). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
