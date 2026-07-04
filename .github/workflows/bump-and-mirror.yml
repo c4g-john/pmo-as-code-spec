@@ -53,4 +53,4 @@ jobs:
           git push -u origin "$BRANCH"
           gh pr create --title "Converge pin + mirror to docassert $latest" \
             --body "Automated: the drift guard's comparison target and the mirrored artifacts advance together, so the guard can never go vacuous again."
-          gh pr merge --auto --squash "$BRANCH" || true
+          gh pr merge --auto --squash "$BRANCH" || gh pr merge --squash "$BRANCH" || true
