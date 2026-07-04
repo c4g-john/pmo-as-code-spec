@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.7.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.8.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -207,6 +207,7 @@ library (§7.2) defines the types `BR`, `PR`, `FR`, `NFR`, `AC`, `US`, `TC`,
 | `verifies` | acceptance criterion → requirement | the criterion verifies the requirement (AC→PR/FR) |
 | `tests` | test case → acceptance criterion | the test exercises the criterion (TC→AC) |
 | `threatens` | risk → requirement | the risk endangers the item (RISK→BR/PR) |
+| `after` | requirement → requirement | sequencing: the item is scoped to follow its target (PR→PR, same project) |
 | `affects` | decision → requirement | the decision changes the item (ADR→FR/NFR) |
 
 Repositories MAY define further relations; processors MUST apply referential
@@ -370,6 +371,13 @@ recorded facts, not status defects. Rationale: a derivation in which any
 open risk ambers forever punishes risk documentation and rewards empty
 registers — the opposite of this standard's purpose.
 
+*Scope-and-sequence presentation:* when presenting work, processors SHOULD
+chart features by dependency sequence (`after` layers) and scope size —
+recommended measure: **scope points** = traced stories + verifying
+acceptance criteria, a pure document count involving no estimation — rather
+than by a time axis. Recommended size labels over published buckets:
+XS=1, S=2, M=3–4, L=5–7, XL=8+.
+
 *Charter target milestone:* processors SHOULD treat an approved charter's
 `dates.target` as an implicit dated milestone ("Charter target") wherever
 dated milestones are presented (§13.2), so every chartered project has a
@@ -401,7 +409,7 @@ truth.
 ## 12. Conformance claims and versioning
 
 This specification is versioned semantically; this document is
-**v0.7.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
+**v0.8.0 (Draft)** (0.2.0 introduced check severities, §8.2a; 0.3.0 made the standard library normative in §13, added processing details in §14, and introduced the conformance suite under `conformance/`; 0.3.1 added the
 informative execution-mapping appendix; 0.3.2 added the optional `repo`
 field on project anchors for bridge repository routing; 0.4.0 made the risk
 lifecycle normative: the `Status` disposition field on `RISK` items, the
@@ -413,7 +421,8 @@ dated charter milestones machine-readable (`- <label>: YYYY-MM-DD`, the
 advisory `milestones-dated` check, temporal-fact presentation rule); 0.7.0
 introduced the risk appetite: open risks amber derived status only at or
 above `risk_amber_score` (default 6), and charters' `dates.target` became
-an implicit milestone). Breaking changes to grammars or blocking semantics require
+an implicit milestone; 0.8.0 added the `after` sequencing relation with the
+`sequence-acyclic` check and the scope-points presentation recommendation). Breaking changes to grammars or blocking semantics require
 a major version. An implementation SHOULD claim conformance as: *"implements
 PMO as Code v0.1"*. A claim MUST cover, at minimum: the document model (§4),
 the identity grammars (§5), the item grammar and standard relations (§6), and
@@ -495,6 +504,9 @@ not found.
   item yields a `Status` field, its value (case-insensitive) is one of
   `open | mitigated | accepted | closed`. A `RISK` item without a `Status`
   field has the disposition `open`.
+- **`sequence-acyclic`** (always; cross-document) — the directed graph of
+  `after` links contains no cycle. A cycle is objectively broken sequencing
+  and blocks like a broken reference.
 - **`milestones-dated`** (never blocking; `charter`) — at least one
   `Milestones` bullet ends with an ISO date, so timelines have something to
   draw. Advisory only: undated milestone prose is legal.
