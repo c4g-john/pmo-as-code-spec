@@ -1,0 +1,11 @@
+{
+ "expect": [
+  {
+   "path": "*",
+   "check_id": "sequence-acyclic",
+   "passed": false,
+   "blocking": true
+  }
+ ],
+ "exit_nonzero": true
+}
