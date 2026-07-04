@@ -6,7 +6,7 @@ name: bump docassert + refresh mirror
 # BUMP_TOKEN so required checks run on the PR).
 on:
   schedule:
-    - cron: "37 10 * * *"
+    - cron: "37 */2 * * *"
   workflow_dispatch:
 
 permissions:
