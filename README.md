@@ -15,7 +15,7 @@ its reference implementation.
 
 | | |
 |---|---|
-| The standard's site | https://c4g-john.github.io/pmo-as-code/ |
+| The standard's site | https://pmoascode.com/ |
 | Reference implementation | [docassert](https://github.com/c4g-john/docassert) · `pip install docassert` · [docassert.com](https://docassert.com) |
 | CI action | [docassert-action](https://github.com/c4g-john/docassert-action) |
 | Starter template | [pmo-as-code-template](https://github.com/c4g-john/pmo-as-code-template) |
