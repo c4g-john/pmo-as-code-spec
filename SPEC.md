@@ -1,6 +1,6 @@
 # PMO as Code — Specification
 
-**Version 0.8.0 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
+**Version 0.8.1 (Draft)** · July 2026 · © 2026 C4G Enterprises Inc. · Apache-2.0
 
 PMO as Code is a vendor-neutral standard for running a project management
 office from version-controlled, declarative files: business documents are
@@ -1198,6 +1198,13 @@ marker), or *orphaned* (marker resolves to an item that was removed or
 demoted). Unverified and orphaned items are labelled and alerted, never
 auto-closed; a human decides, and the honest fix for new scope is a documents
 pull request. A non-zero exit from reconciliation makes CI itself the alarm.
+
+Operational automation may need to open tracker items in a governed
+repository (monitoring alarms, dependency bots). An item labelled
+`scope:exempt` MUST be excluded from scope classification entirely: it is
+neither matched, unverified, nor orphaned, and it never contributes to the
+reconciliation exit code. The label is an explicit human-auditable decision;
+implementations MUST NOT apply it themselves.
 
 **Delivery read-back.** Execution progress (closed stories per feature) and
 the scope classification may be rendered beside the document-derived status.
