@@ -1,12 +1,12 @@
 name: bump docassert + refresh mirror
 
-# The anti-0.7.1 controller: daily, compares the sync pin to the latest
+# The anti-0.7.1 controller: on release dispatch, compares the sync pin to the latest
 # release; when it trails, bumps the pin AND refreshes the artifacts/ mirror
 # from the released package in one PR, auto-merged when checks pass (needs
 # BUMP_TOKEN so required checks run on the PR).
 on:
-  schedule:
-    - cron: "37 */2 * * *"
+  repository_dispatch:
+    types: [docassert-release]
   workflow_dispatch:
 
 permissions:
