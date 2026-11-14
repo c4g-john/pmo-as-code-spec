@@ -25,18 +25,30 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+      - name: Detect whether the release changed
+        id: release
+        run: |
+          latest=$(curl --fail --silent --show-error --retry 3 https://pypi.org/pypi/docassert/json | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["version"])')
+          echo "$latest" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::invalid release version"; exit 1; }
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          pin=$(tr -d '[:space:]' < .docassert-version)
+          if [ "$latest" = "$pin" ]; then
+            echo "coherent at $pin"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: c4g-john/docassert-action/install@v1
+        if: steps.release.outputs.changed == 'true'
+        with:
+          version: ${{ steps.release.outputs.version }}
       - name: Converge pin and mirror to the latest release
+        if: steps.release.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
+          LATEST: ${{ steps.release.outputs.version }}
         run: |
-          latest=$(curl -s https://pypi.org/pypi/docassert/json | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["version"])')
-          pin=$(tr -d '[:space:]' < .docassert-version)
-          if [ "$latest" = "$pin" ]; then echo "coherent at $pin"; exit 0; fi
-          for attempt in 1 2 3 4; do
-            pip install --quiet "docassert==$latest" && break
-            [ "$attempt" = "4" ] && { echo "::error::install failed"; exit 1; }
-            sleep 75
-          done
+          latest="$LATEST"
           pkgdata=$(python3 -c "from importlib.resources import files; print(files('docassert') / '_data')")
           for sub in criteria schema profiles templates; do
             mkdir -p "artifacts/$sub"
